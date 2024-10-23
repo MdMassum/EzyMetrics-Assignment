@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// schema.prisma
+
+model Lead {
+  id        String     @id @default(cuid()) // Unique identifier for the lead
+  firstName String // First name of the lead
+  lastName  String // Last name of the lead
+  email     String     @unique // Email address of the lead
+  phone     String? // Optional phone number
+  company   String? // Optional company name
+  source    String // How the lead was acquired
+  status    LeadStatus // Lead status
+  createdAt DateTime   @default(now()) // Timestamp when the lead was created
+  updatedAt DateTime   @updatedAt // Timestamp when the lead was last updated
+
+  campaigns    Campaign[]     @relation("LeadCampaign") // Relationship with Campaigns
+  LeadCampaign LeadCampaign[]
+}
+
+model Campaign {
+  id             String         @id @default(cuid()) // Unique identifier for the campaign
+  name           String // Name of the campaign
+  type           CampaignType // Type of campaign
+  startDate      DateTime // Start date of the campaign
+  endDate        DateTime // End date of the campaign
+  budget         Float // Budget allocated for the campaign
+  targetAudience String // Description of the target audience
+  status         CampaignStatus // Current status of the campaign
+  createdAt      DateTime       @default(now()) // Timestamp when the campaign was created
+  updatedAt      DateTime       @updatedAt // Timestamp when the campaign was last updated
+
+  leads        Lead[]         @relation("LeadCampaign") // Relationship with Leads
+  LeadCampaign LeadCampaign[]
+}
+
+// Join table for the many-to-many relationship
+model LeadCampaign {
+  leadId     String // Reference to Lead ID
+  campaignId String // Reference to Campaign ID
+
+  lead     Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, campaignId]) // Composite primary key
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+}
+
+// Enum for Campaign Type
+enum CampaignType {
+  EMAIL
+  SOCIAL
+  ADS
+}
+
+// Enum for Campaign Status
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
